@@ -1,0 +1,161 @@
+﻿@page "/cars"
+@using BilbasenBlazorApp.Models
+@inject Services.CarService carService
+
+<PageTitle>Cars</PageTitle>
+
+<h1>Car Page!</h1>
+
+<div class="container mb-3">
+    @pages - @carService.GetAllCars().Count()
+</div>
+
+<div class="container mb-3">
+    @pageNumber
+</div>
+
+<div class="container">
+    <div class="mb-3">
+        <button class="btn btn-primary" @onclick="DecreaseCount">Previous</button>
+        <button class="btn btn-primary" @onclick="IncrementCount">Next</button>
+        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter">
+            Filter
+        </button>
+    </div>
+    <div class="collapse" id="collapseFilter">
+        <div class="card card-body">
+            <div class="row row-cols-6">
+                <div class="col">
+                    <select class="form-select" @onchange="ChangePageCount">
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <select class="form-select">
+                        <option value="index" selected>Index</option>
+                        <option value="brand">Brand</option>
+                        <option value="year">Year</option>
+                        <option value="horsepower">Horse Power</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="pt-3 mb-3">
+    <div class="card card-inset">
+        <div class="card-body">
+            @((MarkupString)divContent)
+        </div>
+    </div>
+</div>
+
+
+@code
+{
+    private string divContent = "";
+    private int pageNumber = 0;
+    private int pages = 0;
+    private int itemsPerPage = 10;
+
+    protected override void OnInitialized()
+    {
+        pages = carService.GetAllCars().Count() / itemsPerPage;
+        BuildCarList();
+    }
+
+    private void IncrementCount()
+    {
+        pageNumber++;
+        GetCurrentPage();
+        BuildCarList();
+    }
+
+    private void DecreaseCount()
+    {
+        pageNumber--;
+        GetCurrentPage();
+        BuildCarList();
+    }
+
+    private int GetCurrentPage()
+    {
+        pageNumber = Math.Max(0, Math.Min(pages, pageNumber));
+        return pageNumber;
+    }
+
+    private void ChangePageCount(ChangeEventArgs e)
+    {
+        if (e.Value == null) return;
+
+        itemsPerPage = Convert.ToInt32(e.Value.ToString());
+        pages = carService.GetAllCars().Count() / itemsPerPage;
+        BuildCarList();
+    }
+
+    private void BuildCarList()
+    {
+        HtmlElement row = new HtmlElement("div");
+        row.classList.Add("row");
+        row.classList.Add("row-cols-1");
+        row.classList.Add("gy-2");
+
+        int start = GetCurrentPage() * itemsPerPage;
+        int end = Math.Min(start + itemsPerPage, carService.GetAllCars().Count());
+
+        for (int index = start; index < end; index++)
+        {
+            Car car = carService.GetAllCars()[index];
+
+            HtmlElement column = new HtmlElement("div");
+            column.classList.Add("col");
+            row.appendChild(column);
+
+            HtmlElement card = new HtmlElement("div");
+            card.classList.Add("card");
+            card.classList.Add("list-hover");
+            column.appendChild(card);
+
+            HtmlElement cardBody = new HtmlElement("div");
+            cardBody.classList.Add("card-body");
+            card.appendChild(cardBody);
+
+            HtmlElement cardRow = new HtmlElement("div");
+            cardRow.classList.Add("row");
+            cardRow.classList.Add("row-cols-5");
+            cardBody.appendChild(cardRow);
+
+            HtmlElement colBrand = new HtmlElement("div");
+            colBrand.classList.Add("col");
+            colBrand.innerHTML = car.Brand;
+            cardRow.appendChild(colBrand);
+
+            HtmlElement colModel = new HtmlElement("div");
+            colModel.classList.Add("col");
+            colModel.innerHTML = car.Model;
+            cardRow.appendChild(colModel);
+
+            HtmlElement colColor = new HtmlElement("div");
+            colColor.classList.Add("col");
+            colColor.innerHTML = car.Color;
+            cardRow.appendChild(colColor);
+
+            HtmlElement colYear = new HtmlElement("div");
+            colYear.classList.Add("col");
+            colYear.innerHTML = car.Year.ToString();
+            cardRow.appendChild(colYear);
+
+            HtmlElement colHorsePower = new HtmlElement("div");
+            colHorsePower.classList.Add("col");
+            colHorsePower.innerHTML = car.HorsePower.ToString() + "hk";
+            cardRow.appendChild(colHorsePower);
+        }
+
+        divContent = row.Render();
+    }
+}
